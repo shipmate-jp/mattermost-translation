@@ -1,6 +1,4 @@
 package main
 
-func (p *Plugin) runJob() {
-	// Include job logic here
-	p.API.LogInfo("Job is currently running")
-}
+// Placeholder file for future background job logic.
+// Currently no background jobs are implemented.

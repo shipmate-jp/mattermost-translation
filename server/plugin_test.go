@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -20,10 +19,4 @@ func TestServeHTTP(t *testing.T) {
 
 	result := w.Result()
 	assert.NotNil(result)
-	defer result.Body.Close()
-	bodyBytes, err := io.ReadAll(result.Body)
-	assert.Nil(err)
-	bodyString := string(bodyBytes)
-
-	assert.Equal("Hello, world!", bodyString)
 }

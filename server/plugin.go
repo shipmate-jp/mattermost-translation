@@ -3,19 +3,17 @@ package main
 import (
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/mattermost/mattermost-plugin-starter-template/server/command"
 	"github.com/mattermost/mattermost-plugin-starter-template/server/store/kvstore"
 	"github.com/mattermost/mattermost/server/public/model"
 	"github.com/mattermost/mattermost/server/public/plugin"
 	"github.com/mattermost/mattermost/server/public/pluginapi"
-	"github.com/mattermost/mattermost/server/public/pluginapi/cluster"
-	"github.com/pkg/errors"
 )
 
 // Plugin implements the interface expected by the Mattermost server to communicate between the server and plugin processes.
 type Plugin struct {
+	// Embed Mattermost plugin helper
 	plugin.MattermostPlugin
 
 	// kvstore is the client used to read/write KV records for this plugin.
@@ -27,8 +25,6 @@ type Plugin struct {
 	// commandClient is the client used to register and execute slash commands.
 	commandClient command.Command
 
-	backgroundJob *cluster.Job
-
 	// configurationLock synchronizes access to the configuration.
 	configurationLock sync.RWMutex
 
@@ -39,34 +35,19 @@ type Plugin struct {
 
 // OnActivate is invoked when the plugin is activated. If an error is returned, the plugin will be deactivated.
 func (p *Plugin) OnActivate() error {
+	// Initialize plugin API client with live API/Driver
 	p.client = pluginapi.NewClient(p.API, p.Driver)
 
 	p.kvstore = kvstore.NewKVStore(p.client)
 
 	p.commandClient = command.NewCommandHandler(p.client)
 
-	job, err := cluster.Schedule(
-		p.API,
-		"BackgroundJob",
-		cluster.MakeWaitForRoundedInterval(1*time.Hour),
-		p.runJob,
-	)
-	if err != nil {
-		return errors.Wrap(err, "failed to schedule background job")
-	}
-
-	p.backgroundJob = job
-
 	return nil
 }
 
 // OnDeactivate is invoked when the plugin is deactivated.
 func (p *Plugin) OnDeactivate() error {
-	if p.backgroundJob != nil {
-		if err := p.backgroundJob.Close(); err != nil {
-			p.API.LogError("Failed to close background job", "err", err)
-		}
-	}
+	// No background jobs to close
 	return nil
 }
 

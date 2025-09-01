@@ -1,26 +1,43 @@
 {
-    "id": "com.mattermost.plugin-starter-template",
-    "name": "Plugin Starter Template",
-    "description": "This plugin serves as a starting point for writing a Mattermost plugin.",
-    "homepage_url": "https://github.com/mattermost/mattermost-plugin-starter-template",
-    "support_url": "https://github.com/mattermost/mattermost-plugin-starter-template/issues",
-    "icon_path": "assets/starter-template-icon.svg",
-    "min_server_version": "6.2.1",
-    "server": {
-        "executables": {
-            "linux-amd64": "server/dist/plugin-linux-amd64",
-            "linux-arm64": "server/dist/plugin-linux-arm64",
-            "darwin-amd64": "server/dist/plugin-darwin-amd64",
-            "darwin-arm64": "server/dist/plugin-darwin-arm64",
-            "windows-amd64": "server/dist/plugin-windows-amd64.exe"
-        }
-    },
-    "webapp": {
-        "bundle_path": "webapp/dist/main.js"
-    },
-    "settings_schema": {
-        "header": "",
-        "footer": "",
-        "settings": []
+  "id": "jp.shipmate.mattermost-translate",
+  "name": "Mattermost Translate",
+  "description": "A plugin to translate messages in Mattermost using google translate API.",
+  "homepage_url": "https://github.com/petrichor-japan/mattermost-translation",
+  "support_url": "https://github.com/petrichor-japan/mattermost-translation/issues",
+  "icon_path": "assets/starter-template-icon.svg",
+  "min_server_version": "6.2.1",
+  "server": {
+    "executables": {
+      "linux-amd64": "server/dist/plugin-linux-amd64",
+      "linux-arm64": "server/dist/plugin-linux-arm64",
+      "darwin-amd64": "server/dist/plugin-darwin-amd64",
+      "darwin-arm64": "server/dist/plugin-darwin-arm64",
+      "windows-amd64": "server/dist/plugin-windows-amd64.exe"
     }
+  },
+  "webapp": {
+    "bundle_path": "webapp/dist/main.js"
+  },
+  "settings_schema": {
+    "header": "",
+    "footer": "",
+    "settings": [
+      {
+        "key": "GoogleAPIKey",
+        "display_name": "Google Translate API Key",
+        "type": "text",
+        "help_text": "Server-side API key for Google Cloud Translation API v2.",
+        "placeholder": "",
+        "default": ""
+      },
+      {
+        "key": "DefaultTargetLang",
+        "display_name": "Default Target Language",
+        "type": "text",
+        "help_text": "Default ISO language code to translate into (e.g. ja, en, es).",
+        "placeholder": "ja",
+        "default": "ja"
+      }
+    ]
+  }
 }
