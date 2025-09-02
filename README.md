@@ -1,218 +1,95 @@
-# Plugin Starter Template
+# Mattermost Translate
 
-[![Build Status](https://github.com/mattermost/mattermost-plugin-starter-template/actions/workflows/ci.yml/badge.svg)](https://github.com/mattermost/mattermost-plugin-starter-template/actions/workflows/ci.yml)
-[![E2E Status](https://github.com/mattermost/mattermost-plugin-starter-template/actions/workflows/e2e.yml/badge.svg)](https://github.com/mattermost/mattermost-plugin-starter-template/actions/workflows/e2e.yml)
+Translate any message in Mattermost with one click using Google Cloud Translation API v2.
 
-This plugin serves as a starting point for writing a Mattermost plugin. Feel free to base your own plugin off this repository.
+-   Adds a “🌐 Translate message” action to each post menu
+-   Sends the translation back to you as an ephemeral message
+-   Replies in-thread when the original message is threaded
+-   Server-side configuration for API key and default target language
 
-To learn more about plugins, see [our plugin documentation](https://developers.mattermost.com/extend/plugins/).
+## Requirements
 
-This template requires node v16 and npm v8. You can download and install nvm to manage your node versions by following the instructions [here](https://github.com/nvm-sh/nvm). Once you've setup the project simply run `nvm i` within the root folder to use the suggested version of node.
+-   Mattermost Server 6.2.1+ (tested on newer versions as well)
+-   A Google Cloud project with the Cloud Translation API enabled
+-   A Google API key with access to Cloud Translation API v2
 
-## Getting Started
-Use GitHub's template feature to make a copy of this repository by clicking the "Use this template" button.
+## Installation
 
-Alternatively shallow clone the repository matching your plugin name:
-```
-git clone --depth 1 https://github.com/mattermost/mattermost-plugin-starter-template com.example.my-plugin
-```
+### Install from a release (recommended)
 
-Note that this project uses [Go modules](https://github.com/golang/go/wiki/Modules). Be sure to locate the project outside of `$GOPATH`.
+1. Download the plugin bundle tarball from the Releases page (jp.shipmate.mattermost-translate-<version>.tar.gz).
+2. In Mattermost System Console, go to:
+    - System Console → Plugin Management → Upload Plugin → Upload the tarball
+3. Enable the plugin.
 
-Edit the following files:
-1. `plugin.json` with your `id`, `name`, and `description`:
-```json
-{
-    "id": "com.example.my-plugin",
-    "name": "My Plugin",
-    "description": "A plugin to enhance Mattermost."
-}
-```
+### Install from source
 
-2. `go.mod` with your Go module path, following the `<hosting-site>/<repository>/<module>` convention:
-```
-module github.com/example/my-plugin
-```
+Prerequisites: Go 1.20+, Node.js 16+, npm 8+, make
 
-3. `.golangci.yml` with your Go module path:
-```yml
-linters-settings:
-  # [...]
-  goimports:
-    local-prefixes: github.com/example/my-plugin
-```
+-   Build and package:
+    -   make dist
+    -   The bundle is created at dist/jp.shipmate.mattermost-translate-<version>.tar.gz
+-   Upload via System Console as above, or deploy to a local server using environment variables:
+    -   Using personal access token:
+        -   export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
+        -   export MM_ADMIN_TOKEN=<your_token>
+        -   make deploy
+    -   Using username/password:
+        -   export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
+        -   export MM_ADMIN_USERNAME=admin
+        -   export MM_ADMIN_PASSWORD=<password>
+        -   make deploy
 
-Build your plugin:
-```
-make
-```
+## Configuration
 
-This will produce a single plugin file (with support for multiple architectures) for upload to your Mattermost server:
+After installation, configure the plugin in System Console → Plugins → Mattermost Translate.
 
-```
-dist/com.example.my-plugin.tar.gz
-```
+-   GoogleAPIKey (required)
+    -   Your Google API key for Cloud Translation API v2.
+    -   Create/Manage at https://console.cloud.google.com/apis/credentials and enable the Translation API.
+-   DefaultTargetLang (optional)
+    -   ISO language code to translate into by default (e.g. en, ja, es). Default: ja
+
+Click Save when done.
+
+## Usage
+
+-   Hover a message, open the “…” post menu, and click “🌐 Translate message”.
+-   The translation will be sent back to you as an ephemeral message.
+-   If the original message is part of a thread, the reply appears in that thread.
+
+Notes
+
+-   If you want to override the target language per request, this can be added in a future enhancement. Currently the server uses DefaultTargetLang when no target is specified by the client.
+
+## Troubleshooting
+
+-   401 Unauthorized when calling the API
+    -   Ensure you are logged in and accessing Mattermost from the same origin (no cross-domain proxy).
+    -   Clear cache/hard refresh to load the updated webapp.
+-   Translation returns the original text
+    -   Verify GoogleAPIKey is valid and the Translation API is enabled in your project.
+    -   Check DefaultTargetLang is set correctly (e.g. en to translate Japanese → English).
+-   The menu shows but no response
+    -   Check System Console → Logs for plugin errors.
+    -   Re-upload the latest bundle and refresh the client.
 
 ## Development
 
-To avoid having to manually install your plugin, build and deploy your plugin using one of the following options. In order for the below options to work, you must first enable plugin uploads via your config.json or API and restart Mattermost.
+-   Lint & type-check:
+    -   make check-style
+-   Build:
+    -   make dist
+-   Watch & auto-deploy to a local server (requires MM_ADMIN_TOKEN and MM_SERVICESETTINGS_SITEURL):
+    -   export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
+    -   export MM_ADMIN_TOKEN=<your_token>
+    -   make watch
 
-```json
-    "PluginSettings" : {
-        ...
-        "EnableUploads" : true
-    }
-```
+Project structure
 
-### Development guidance 
+-   server/: Go backend (Mattermost plugin hooks and REST API)
+-   webapp/: Frontend bundle that registers the post menu action
 
-1. Fewer packages is better: default to the main package unless there's good reason for a new package.
+## License
 
-2. Coupling implies same package: don't jump through hoops to break apart code that's naturally coupled.
-
-3. New package for a new interface: a classic example is the sqlstore with layers for monitoring performance, caching and mocking.
-
-4. New package for upstream integration: a discrete client package for interfacing with a 3rd party is often a great place to break out into a new package
-
-### Modifying the server boilerplate
-
-The server code comes with some boilerplate for creating an api, using slash commands, accessing the kvstore and using the cluster package for jobs. 
-
-#### Api
-
-api.go implements the ServeHTTP hook which allows the plugin to implement the http.Handler interface. Requests destined for the `/plugins/{id}` path will be routed to the plugin. This file also contains a sample `HelloWorld` endpoint that is tested in plugin_test.go.
-
-#### Command package
-
-This package contains the boilerplate for adding a slash command and an instance of it is created in the `OnActivate` hook in plugin.go. If you don't need it you can delete the package and remove any reference to `commandClient` in plugin.go. The package also contains an example of how to create a mock for testing.
-
-#### KVStore package
-
-This is a central place for you to access the KVStore methods that are available in the `pluginapi.Client`. The package contains an interface for you to define your methods that will wrap the KVStore methods. An instance of the KVStore is created in the `OnActivate` hook.
-
-### Deploying with Local Mode
-
-If your Mattermost server is running locally, you can enable [local mode](https://docs.mattermost.com/administration/mmctl-cli-tool.html#local-mode) to streamline deploying your plugin. Edit your server configuration as follows:
-
-```json
-{
-    "ServiceSettings": {
-        ...
-        "EnableLocalMode": true,
-        "LocalModeSocketLocation": "/var/tmp/mattermost_local.socket"
-    },
-}
-```
-
-and then deploy your plugin:
-```
-make deploy
-```
-
-You may also customize the Unix socket path:
-```bash
-export MM_LOCALSOCKETPATH=/var/tmp/alternate_local.socket
-make deploy
-```
-
-If developing a plugin with a webapp, watch for changes and deploy those automatically:
-```bash
-export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
-export MM_ADMIN_TOKEN=j44acwd8obn78cdcx7koid4jkr
-make watch
-```
-
-### Deploying with credentials
-
-Alternatively, you can authenticate with the server's API with credentials:
-```bash
-export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
-export MM_ADMIN_USERNAME=admin
-export MM_ADMIN_PASSWORD=password
-make deploy
-```
-
-or with a [personal access token](https://docs.mattermost.com/developer/personal-access-tokens.html):
-```bash
-export MM_SERVICESETTINGS_SITEURL=http://localhost:8065
-export MM_ADMIN_TOKEN=j44acwd8obn78cdcx7koid4jkr
-make deploy
-```
-
-### Releasing new versions
-
-The version of a plugin is determined at compile time, automatically populating a `version` field in the [plugin manifest](plugin.json):
-* If the current commit matches a tag, the version will match after stripping any leading `v`, e.g. `1.3.1`.
-* Otherwise, the version will combine the nearest tag with `git rev-parse --short HEAD`, e.g. `1.3.1+d06e53e1`.
-* If there is no version tag, an empty version will be combined with the short hash, e.g. `0.0.0+76081421`.
-
-To disable this behaviour, manually populate and maintain the `version` field.
-
-## How to Release
-
-To trigger a release, follow these steps:
-
-1. **For Patch Release:** Run the following command:
-    ```
-    make patch
-    ```
-   This will release a patch change.
-
-2. **For Minor Release:** Run the following command:
-    ```
-    make minor
-    ```
-   This will release a minor change.
-
-3. **For Major Release:** Run the following command:
-    ```
-    make major
-    ```
-   This will release a major change.
-
-4. **For Patch Release Candidate (RC):** Run the following command:
-    ```
-    make patch-rc
-    ```
-   This will release a patch release candidate.
-
-5. **For Minor Release Candidate (RC):** Run the following command:
-    ```
-    make minor-rc
-    ```
-   This will release a minor release candidate.
-
-6. **For Major Release Candidate (RC):** Run the following command:
-    ```
-    make major-rc
-    ```
-   This will release a major release candidate.
-
-## Q&A
-
-### How do I make a server-only or web app-only plugin?
-
-Simply delete the `server` or `webapp` folders and remove the corresponding sections from `plugin.json`. The build scripts will skip the missing portions automatically.
-
-### How do I include assets in the plugin bundle?
-
-Place them into the `assets` directory. To use an asset at runtime, build the path to your asset and open as a regular file:
-
-```go
-bundlePath, err := p.API.GetBundlePath()
-if err != nil {
-    return errors.Wrap(err, "failed to get bundle path")
-}
-
-profileImage, err := ioutil.ReadFile(filepath.Join(bundlePath, "assets", "profile_image.png"))
-if err != nil {
-    return errors.Wrap(err, "failed to read profile image")
-}
-
-if appErr := p.API.SetProfileImage(userID, profileImage); appErr != nil {
-    return errors.Wrap(err, "failed to set profile image")
-}
-```
-
-### How do I build the plugin with unminified JavaScript?
-Setting the `MM_DEBUG` environment variable will invoke the debug builds. The simplist way to do this is to simply include this variable in your calls to `make` (e.g. `make dist MM_DEBUG=1`).
+This project is open source. See LICENSE for details.
