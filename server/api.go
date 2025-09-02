@@ -131,8 +131,13 @@ func (p *Plugin) handleTranslate(w http.ResponseWriter, r *http.Request) {
 	// Optionally send an ephemeral post to the requesting user with the translation
 	if p.client != nil {
 		if userID := r.Header.Get("Mattermost-User-ID"); userID != "" {
+			rootID := ""
+			if post.RootId != "" {
+				rootID = post.RootId
+			}
 			p.client.Post.SendEphemeralPost(userID, &model.Post{
 				ChannelId: post.ChannelId,
+				RootId:    rootID,
 				Message:   fmt.Sprintf("Translation (%s):\n%s", req.TargetLang, translated),
 			})
 		}
