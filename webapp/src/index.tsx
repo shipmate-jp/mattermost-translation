@@ -30,7 +30,7 @@ export default class Plugin {
     // @see https://developers.mattermost.com/extend/plugins/webapp/reference/
         if (registry.registerPostDropdownMenuAction) {
             registry.registerPostDropdownMenuAction(
-                'Translate message',
+                '🌐 Translate message',
                 async (postId: string) => {
                     try {
                         const csrfToken = getCookie('MMCSRF');
